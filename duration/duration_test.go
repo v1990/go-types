@@ -24,11 +24,12 @@ func TestDuration(t *testing.T) {
 	})
 
 	tests := []struct {
-		name      string
-		data      data
-		txt       string
-		unmarshal func(data []byte, v interface{}) error
-		marshal   func(v interface{}) ([]byte, error)
+		name             string
+		data             data
+		txt              string
+		unmarshal        func(data []byte, v interface{}) error
+		wantUnmarshalErr error
+		marshal          func(v interface{}) ([]byte, error)
 	}{
 		{
 			name: "json",
@@ -43,7 +44,7 @@ func TestDuration(t *testing.T) {
 			name: "json_array",
 			data: data{
 				Timeout:   Second,
-				Intervals: []Duration{Nanosecond,Microsecond,Millisecond,Second, Minute, Hour},
+				Intervals: []Duration{Nanosecond, Microsecond, Millisecond, Second, Minute, Hour},
 			},
 			txt:       `{"timeout":"1s","intervals":["1ns","1µs","1ms","1s","1m0s","1h0m0s"]}`,
 			unmarshal: json.Unmarshal,
@@ -62,27 +63,46 @@ func TestDuration(t *testing.T) {
 			name: "yaml_array",
 			data: data{
 				Timeout:   Second,
-				Intervals: []Duration{Nanosecond,Microsecond,Millisecond,Second, Minute, Hour},
+				Intervals: []Duration{Nanosecond, Microsecond, Millisecond, Second, Minute, Hour},
 			},
 			txt:       "timeout: 1s\nintervals: [1ns, 1µs, 1ms, 1s, 1m0s, 1h0m0s]\n",
 			unmarshal: yaml.Unmarshal,
 			marshal:   yaml.Marshal,
 		},
+		{
+			name:             "json_unmarshal_error",
+			txt:              `{"timeout":"BadDuration"}`,
+			unmarshal:        json.Unmarshal,
+			wantUnmarshalErr: fmt.Errorf(`time: invalid duration "BadDuration"`),
+		},
+		{
+			name:             "yaml_unmarshal_error",
+			txt:              `timeout: BadDuration`,
+			unmarshal:        yaml.Unmarshal,
+			wantUnmarshalErr: fmt.Errorf(`time: invalid duration "BadDuration"`),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Run("marshal", func(t *testing.T) {
+			if tt.marshal != nil {
 				body, err := tt.marshal(tt.data)
 				require.NoError(t, err)
 				require.Equal(t, tt.txt, string(body))
-			})
-			t.Run("unmarshal", func(t *testing.T) {
+			}
+
+			if tt.unmarshal != nil {
 				var d2 data
 				err := tt.unmarshal([]byte(tt.txt), &d2)
-				require.NoError(t, err)
-				require.Equal(t, tt.data, d2)
-			})
+
+				if tt.wantUnmarshalErr == nil {
+					require.NoError(t, err)
+					require.Equal(t, tt.data, d2)
+				} else {
+					require.Error(t, err)
+					require.Equal(t, tt.wantUnmarshalErr.Error(), err.Error())
+				}
+			}
 		})
 	}
 

@@ -22,18 +22,18 @@ func TestURL(t *testing.T) {
 		{
 			name: "json",
 			data: data{
-				URL: MustParse("https://www.baidu.com"),
+				URL: MustParse("https://www.google.com"),
 			},
-			txt:       `{"url":"https://www.baidu.com"}`,
+			txt:       `{"url":"https://www.google.com"}`,
 			unmarshal: json.Unmarshal,
 			marshal:   json.Marshal,
 		},
 		{
 			name: "yaml",
 			data: data{
-				URL: MustParse("https://www.baidu.com"),
+				URL: MustParse("https://www.google.com"),
 			},
-			txt:       "url: https://www.baidu.com\n",
+			txt:       "url: https://www.google.com\n",
 			unmarshal: yaml.Unmarshal,
 			marshal:   yaml.Marshal,
 		},

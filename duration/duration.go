@@ -41,13 +41,14 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 func (d Duration) MarshalText() ([]byte, error) {
 	return []byte(d.String()), nil
 }
-func (d *Duration) UnmarshalText(b []byte) error {
-	var v interface{}
-	if err := json.Unmarshal(b, &v); err != nil {
-		return err
-	}
-	return d.setValue(v)
-}
+
+//func (d *Duration) UnmarshalText(b []byte) error {
+//	var v interface{}
+//	if err := json.Unmarshal(b, &v); err != nil {
+//		return err
+//	}
+//	return d.setValue(v)
+//}
 
 func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var v interface{}

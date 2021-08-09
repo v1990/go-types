@@ -2,6 +2,7 @@ package bytesize
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/alecthomas/units"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,11 +17,12 @@ type data struct {
 
 func TestBase2Bytes(t *testing.T) {
 	tests := []struct {
-		name      string
-		data      data
-		txt       string
-		unmarshal func(data []byte, v interface{}) error
-		marshal   func(v interface{}) ([]byte, error)
+		name             string
+		data             data
+		txt              string
+		unmarshal        func(data []byte, v interface{}) error
+		wantUnmarshalErr error
+		marshal          func(v interface{}) ([]byte, error)
 	}{
 
 		{
@@ -53,6 +55,12 @@ func TestBase2Bytes(t *testing.T) {
 			unmarshal: yaml.Unmarshal,
 			marshal:   yaml.Marshal,
 		},
+		{
+			name:             "yaml_unmarshal_error",
+			txt:              "size: BadSize",
+			unmarshal:        yaml.Unmarshal,
+			wantUnmarshalErr: fmt.Errorf("units: invalid BadSize"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -64,8 +72,15 @@ func TestBase2Bytes(t *testing.T) {
 			if tt.unmarshal != nil {
 				var d data
 				err := tt.unmarshal([]byte(tt.txt), &d)
-				require.NoError(t, err)
-				require.Equal(t, d, tt.data)
+
+				if tt.wantUnmarshalErr == nil {
+					require.NoError(t, err)
+					require.Equal(t, d, tt.data)
+				} else {
+					require.Error(t, err)
+					require.Equal(t, tt.wantUnmarshalErr.Error(), err.Error())
+				}
+
 			}
 		})
 	}
